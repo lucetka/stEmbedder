@@ -3,7 +3,7 @@ streamlit
 pandas
 numpy
 requests
-streamlit-aggrid
+streamlit-aggrid==1.2.1.post2
 
 # --- HF + Transformers stack (needed for SPECTER, SPECTER2, adapters) ---
 torch
