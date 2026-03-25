@@ -1,0 +1,17 @@
+# --- Core App ---
+streamlit
+pandas
+numpy
+requests
+st-aggrid
+
+# --- HF + Transformers stack (needed for SPECTER, SPECTER2, adapters) ---
+torch
+transformers
+huggingface_hub
+
+# Adapter support
+adapters
+
+# Optional but recommended for tokenizer speed
+sentencepiece
