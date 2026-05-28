@@ -1,5 +1,4 @@
-# stEmbedder_v2_fixing.py
-# deleted the mistakenly doubled call to create_embeddings which was causing the rerun (probably)
+# fixing the disappearing download button...
 # starting from my original stEmbedder - worked with Copilot to add a choice of model, fixed the hardcoded Abstract thing,
 # and added fixes necessary to run it on windows to avoid symlink errors from HF
 # this was called stEmbedder_models_cloud_specter2_winfix.py before I added these comments 
@@ -467,26 +466,17 @@ if st.button("PREPARE FILES"):
 
 
 st.write("## Step 2: Generate embeddings")
+
 if "prepared_input_df" in st.session_state:
     if st.button("Generate embeddings!"):
         try:
             input_df = st.session_state["prepared_input_df"]
             ref_df = st.session_state["prepared_ref_df"]
             backend = st.session_state.get(
-                "embedding_backend", "SPECTER v1 (API) — hosted (Semantic Scholar)"
+                "embedding_backend",
+                "SPECTER v1 (API) — hosted (Semantic Scholar)"
             )
             adapter = st.session_state.get("specter2_adapter", "proximity")
-
-            ###DEBUG
-            
-            # 🔴 
-            st.session_state["embed_runs"] = st.session_state.get("embed_runs", 0) + 1
-            st.write("Embedding run count this session:", st.session_state["embed_runs"])
-            
-            # --- PATCH D starts here: debug + spinner ---
-            st.write("Backend actually used:", backend)
-            if backend == "SPECTER2 (local HF + adapter)":
-                st.write("SPECTER2 adapter:", adapter)
 
             import time
             t0 = time.time()
@@ -501,52 +491,60 @@ if "prepared_input_df" in st.session_state:
                 )
 
             st.success(f"Done in {time.time() - t0:.1f} seconds.")
-            # --- PATCH D ends here ---
 
-
-            
-
-         
-            base = uploaded_file.name[:-4]
-
-            emb_bytes = df_to_csv_bytes(emb_df.reset_index(), index=False)
-            title_bytes = df_to_csv_bytes(title_df.reset_index(), index=False)
-            ref_bytes = df_to_csv_bytes(ref_df, index=False)
-
-            st.success("Embeddings created.")
-
-            st.download_button(
-                "Download embeddings.csv",
-                data=emb_bytes,
-                file_name=f"{base}_embeddings.csv",
-                mime="text/csv",
-            )
-            st.download_button(
-                "Download embeddings_with_title.csv",
-                data=title_bytes,
-                file_name=f"{base}_embeddings_with_title.csv",
-                mime="text/csv",
-            )
-
-            zip_all = build_zip(
-                {
-                    f"{base}_input4specter.csv": df_to_csv_bytes(input_df, index=False),
-                    f"{base}_index_reference.csv": ref_bytes,
-                    f"{base}_embeddings.csv": emb_bytes,
-                    f"{base}_embeddings_with_title.csv": title_bytes,
-                }
-            )
-
-            st.download_button(
-                "Download ALL outputs (ZIP)",
-                data=zip_all,
-                file_name=f"{base}_all_outputs.zip",
-                mime="application/zip",
-            )
+            # Persist outputs so reruns do not lose the download area
+            st.session_state["emb_df"] = emb_df
+            st.session_state["title_df"] = title_df
+            st.session_state["final_ref_df"] = ref_df
+            st.session_state["embed_done"] = True
 
         except Exception as ex:
             template = "An exception of type {0} occurred. Arguments:{1!r}"
             message = template.format(type(ex).__name__, ex.args)
             st.error(message, icon="🚨")
+
+    # Show downloads whenever results already exist in session
+    if st.session_state.get("embed_done", False):
+        emb_df = st.session_state["emb_df"]
+        title_df = st.session_state["title_df"]
+        ref_df = st.session_state["final_ref_df"]
+
+        base = uploaded_file.name[:-4]
+
+        emb_bytes = df_to_csv_bytes(emb_df.reset_index(), index=False)
+        title_bytes = df_to_csv_bytes(title_df.reset_index(), index=False)
+        ref_bytes = df_to_csv_bytes(ref_df, index=False)
+
+        st.success("Embeddings created.")
+
+        st.download_button(
+            "Download embeddings.csv",
+            data=emb_bytes,
+            file_name=f"{base}_embeddings.csv",
+            mime="text/csv",
+        )
+
+        st.download_button(
+            "Download embeddings_with_title.csv",
+            data=title_bytes,
+            file_name=f"{base}_embeddings_with_title.csv",
+            mime="text/csv",
+        )
+
+        zip_all = build_zip(
+            {
+                f"{base}_input4specter.csv": df_to_csv_bytes(st.session_state["prepared_input_df"], index=False),
+                f"{base}_index_reference.csv": ref_bytes,
+                f"{base}_embeddings.csv": emb_bytes,
+                f"{base}_embeddings_with_title.csv": title_bytes,
+            }
+        )
+
+        st.download_button(
+            "Download ALL outputs (ZIP)",
+            data=zip_all,
+            file_name=f"{base}_all_outputs.zip",
+            mime="application/zip",
+        )
 else:
     st.info("Run PREPARE FILES first.")
