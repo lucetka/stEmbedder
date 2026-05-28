@@ -1,4 +1,9 @@
-# fixed version with spinner added
+# stEmbedder_v2_fixing.py
+# deleted the mistakenly doubled call to create_embeddings which was causing the rerun (probably)
+# starting from my original stEmbedder - worked with Copilot to add a choice of model, fixed the hardcoded Abstract thing,
+# and added fixes necessary to run it on windows to avoid symlink errors from HF
+# this was called stEmbedder_models_cloud_specter2_winfix.py before I added these comments 
+# and now I'm resaving it as stEmbedder_v2
 
 # Lucie's Streamlit embedder
 # Original: 16-Aug-2022
@@ -486,6 +491,8 @@ if "prepared_input_df" in st.session_state:
             import time
             t0 = time.time()
 
+            st.write(f"Embedding {len(input_df):,} rows using: **{backend}**")
+
             with st.spinner(f"Generating embeddings using: {backend}"):
                 emb_df, title_df = create_embeddings(
                     input_df=input_df,
@@ -497,12 +504,9 @@ if "prepared_input_df" in st.session_state:
             # --- PATCH D ends here ---
 
 
-            st.write(f"Embedding {len(input_df):,} rows using: **{backend}**")
+            
 
-            emb_df, title_df = create_embeddings(
-                input_df, backend=backend, specter2_adapter=adapter
-            )
-
+         
             base = uploaded_file.name[:-4]
 
             emb_bytes = df_to_csv_bytes(emb_df.reset_index(), index=False)
