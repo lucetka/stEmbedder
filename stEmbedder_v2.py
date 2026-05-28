@@ -340,6 +340,10 @@ st.write(
     "then generates embeddings using SPECTER (API) and optionally local models if installed."
 )
 
+st.write(
+    "v 28.5. 10am"
+)
+
 uploaded_file = st.file_uploader("Select your CSV file:", type=["csv"])
 if uploaded_file is None:
     st.stop()
