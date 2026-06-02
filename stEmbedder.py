@@ -1,4 +1,7 @@
-# starting from my original stEmbedder - worked with Copilot to add a choice of model, fixed the hardcoded Abstract thing,
+# this is _v3 02Jun26
+
+
+#starting from my original stEmbedder - worked with Copilot to add a choice of model, fixed the hardcoded Abstract thing,
 # and added fixes necessary to run it on windows to avoid symlink errors from HF
 # this was called stEmbedder_models_cloud_specter2_winfix.py before I added these comments 
 # and now I'm resaving it as stEmbedder_v2
