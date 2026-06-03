@@ -1,5 +1,4 @@
-# this is _v3 02Jun26
-
+# this is _v4
 
 #starting from my original stEmbedder - worked with Copilot to add a choice of model, fixed the hardcoded Abstract thing,
 # and added fixes necessary to run it on windows to avoid symlink errors from HF
@@ -28,8 +27,8 @@ import pandas as pd
 import requests
 import streamlit as st
 
-from st_aggrid import AgGrid
-from st_aggrid.grid_options_builder import GridOptionsBuilder
+#from st_aggrid import AgGrid
+#from st_aggrid.grid_options_builder import GridOptionsBuilder
 
 # -----------------------------------------------------------------------------
 # Windows symlink workaround (Hugging Face cache)
@@ -278,11 +277,11 @@ def prepare_input(
     return input_df, ref_df
 
 
+@st.cache_data(show_spinner=False)
 def df_to_csv_bytes(df: pd.DataFrame, index: bool = False) -> bytes:
     buf = io.StringIO()
     df.to_csv(buf, index=index)
     return buf.getvalue().encode("utf-8")
-
 
 def build_zip(files: Dict[str, bytes]) -> bytes:
     out = io.BytesIO()
@@ -330,12 +329,23 @@ def create_embeddings(
 
     return emb_df, title_df
 
+@st.fragment
+def render_download_button(label, data, file_name, mime, key):
+    st.download_button(
+        label,
+        data=data,
+        file_name=file_name,
+        mime=mime,
+        key=key,
+        on_click="ignore",
+    )
+
 
 # -----------------------------------------------------------------------------
 # Streamlit UI
 # -----------------------------------------------------------------------------
 
-st.title("Create embeddings for scientific papers (cloud-safe)")
+st.title("Create embeddings for scientific papers (cloud-safe) v4")
 
 st.write(
     "This app prepares an embedding input file and a matching reference/metadata file, "
@@ -349,8 +359,10 @@ if uploaded_file is None:
 source_df = pd.read_csv(uploaded_file)
 
 st.write("Preview:")
-gb = GridOptionsBuilder.from_dataframe(source_df, min_column_width=120)
-AgGrid(source_df.head(5), gridOptions=gb.build(), fit_columns_on_grid_load=True)
+#gb = GridOptionsBuilder.from_dataframe(source_df, min_column_width=120)
+#AgGrid(source_df.head(5), gridOptions=gb.build(), fit_columns_on_grid_load=True)
+st.dataframe(source_df.head(5), use_container_width=True)
+
 
 all_columns = list(source_df.columns)
 
@@ -433,8 +445,8 @@ if st.button("PREPARE FILES"):
             additional_cols_list=additional_columns,
         )
 
-        #base = uploaded_file.name[:-4]
-        base = st.session_state.get("prepared_base", uploaded_file.name[:-4])
+        base = uploaded_file.name[:-4]
+        #base = st.session_state.get("prepared_base", uploaded_file.name[:-4])
 
         # Persist prepared outputs so download buttons survive reruns
         st.session_state["prepared_input_df"] = input_df
@@ -462,7 +474,8 @@ if st.session_state.get("prepared_done", False):
     input_bytes = df_to_csv_bytes(input_df, index=False)
     ref_bytes = df_to_csv_bytes(ref_df, index=False)
 
-    st.download_button(
+    #st.download_button(
+    render_download_button(
         "Download input4specter.csv",
         data=input_bytes,
         file_name=f"{base}_input4specter.csv",
@@ -470,7 +483,8 @@ if st.session_state.get("prepared_done", False):
         key="dl_prepared_input_csv",
     )
 
-    st.download_button(
+    #st.download_button(
+    render_download_button(
         "Download index_reference.csv",
         data=ref_bytes,
         file_name=f"{base}_index_reference.csv",
@@ -486,7 +500,8 @@ if st.session_state.get("prepared_done", False):
             }
         )
 
-        st.download_button(
+        #st.download_button(
+        render_download_button(
             "Download both prepared files (ZIP)",
             data=zip_bytes,
             file_name=f"{base}_prepared_files.zip",
@@ -544,7 +559,9 @@ if "prepared_input_df" in st.session_state:
         title_df = st.session_state["title_df"]
         ref_df = st.session_state["final_ref_df"]
 
-        base = uploaded_file.name[:-4]
+        #base = uploaded_file.name[:-4]
+        base = st.session_state.get("prepared_base", uploaded_file.name[:-4])
+
 
         emb_bytes = df_to_csv_bytes(emb_df.reset_index(), index=False)
         title_bytes = df_to_csv_bytes(title_df.reset_index(), index=False)
@@ -552,18 +569,22 @@ if "prepared_input_df" in st.session_state:
 
         st.success("Embeddings created.")
 
-        st.download_button(
+        #st.download_button(
+        render_download_button(
             "Download embeddings.csv",
             data=emb_bytes,
             file_name=f"{base}_embeddings.csv",
             mime="text/csv",
+            key="dl_embeddings_csv",
         )
 
-        st.download_button(
+        #st.download_button(
+        render_download_button(
             "Download embeddings_with_title.csv",
             data=title_bytes,
             file_name=f"{base}_embeddings_with_title.csv",
             mime="text/csv",
+            key="dl_embeddings_title_csv",
         )
 
         STEP2_ZIP_MAX_ROWS = 3000  # disable ZIP above this to reduce memory pressure
@@ -580,7 +601,8 @@ if "prepared_input_df" in st.session_state:
                 }
             )
 
-            st.download_button(
+            #st.download_button(
+            render_download_button(
                 "Download ALL outputs (ZIP)",
                 data=zip_all,
                 file_name=f"{base}_all_outputs.zip",
